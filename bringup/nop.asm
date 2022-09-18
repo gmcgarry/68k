@@ -1,0 +1,7 @@
+; 256B ROM @ $00000000
+
+STACK	EQU	$7FFF
+
+	.org	$00000000
+	.fill $100,0
+	.end

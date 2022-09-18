@@ -1,0 +1,54 @@
+; RAMless
+
+ACIACS	EQU	$000FD800	; [0-F][0-F][0-F][8-F]3800 maps to D800
+ACIADA	EQU	$000FD801
+
+; ROM @ 0x00000000
+;	.BASE	$00000000
+;	ORG	$00000000
+
+; ROM @ 0x00080000
+	.BASE	$00080000
+	ORG	$00080000
+
+	DC.L	$00000000
+	DC.L	START
+
+MSG:	.asciz	"Testing MC6850 UART\r\n"
+
+	.align	1
+START:	MOVE.B	#$03, ACIACS	; reset ACIA
+	NOP
+	NOP
+	NOP
+	MOVE.B	#$15, ACIACS	; initialise ACIA (/16) = 230400bps
+;	MOVE.B	#$14, ACIACS	; initialise ACIA (/64) = 57600bps
+	NOP
+	NOP
+	NOP
+
+	LEA	MSG, A0
+	BRA	2f
+1:	MOVE.B	ACIACS, D1
+	AND.B	#$02, D1
+	BEQ	1b
+	MOVE.B	D0,ACIADA
+2:	MOVE.B	(A0)+, D0
+	BNE	1b
+
+ERROR:	MOVE.B	ACIACS, D0	; get status
+	AND.B	#$7C, D0	; mask IRQ,TDRA,RDA
+	BNE	ERROR		; any errors
+
+1:	MOVE.B	ACIACS, D1
+	AND.B	#$01,D1
+	BEQ	1b
+	MOVE.B	ACIADA, D0	; read character
+
+2:	MOVE.B	ACIACS, D1
+	AND.B	#$02, D1
+	BEQ	2b
+	MOVE.B	D0, ACIADA
+	BRA	ERROR		; start over
+
+	END

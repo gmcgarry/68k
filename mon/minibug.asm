@@ -1,0 +1,427 @@
+; MINI-BUG
+; COPYWRITE 1973, MOTOROLA INC
+; REV 004 (USED WITH MIKBUG)
+
+RAM_START	EQU	$00000000
+RAM_END		EQU	$00080000
+
+ACIA	EQU	$000FD800
+ACIACS	EQU	ACIA+0
+ACIADA	EQU	ACIA+1
+
+STACK	EQU	RAM_END - 256
+
+CKSM	EQU	STACK		; CHECKSUM
+
+	.BASE	$00080000
+	.ORG	$00080000
+
+VTBL:
+	DC.L	STACK
+	DC.L	START
+	DC.L	BUSERR		;  2: bus error
+	DC.L	ADRERR		;  3: address error
+	DC.L	ILL		;  4: illegal instruction
+	DC.L	EXCEPTION	;  5: zero divide
+	DC.L	CHKERR		;  6: chk
+	DC.L	EXCEPTION	;  7: trapv
+	DC.L	PRIV		;  8: privilege violation
+	DC.L	EXCEPTION	;  9: trace
+	DC.L	EXCEPTION	; 10: 1010
+	DC.L	EXCEPTION	; 11: 1111
+	DC.L	EXCEPTION	; 12: -
+	DC.L	EXCEPTION	; 13: -
+	DC.L	EXCEPTION	; 14: -
+	DC.L	EXCEPTION	; 15: uninitialized interrupt
+	DC.L	EXCEPTION	; 16: -
+	DC.L	EXCEPTION	; 17: -
+	DC.L	EXCEPTION	; 18: -
+	DC.L	EXCEPTION	; 19: -
+	DC.L	EXCEPTION	; 20: -
+	DC.L	EXCEPTION	; 21: -
+	DC.L	EXCEPTION	; 22: -
+	DC.L	EXCEPTION	; 23: -
+	DC.L	IRUPT		; 24: spurious interrupt
+	DC.L	EXCEPTION	; 25: l1 irq
+	DC.L	EXCEPTION	; 26: l2 irq
+	DC.L	EXCEPTION	; 27: l3 irq
+	DC.L	EXCEPTION	; 28: l4 irq
+	DC.L	EXCEPTION	; 29: l5 irq
+	DC.L	EXCEPTION	; 30: l6 irq
+	DC.L	NMI		; 31: l7 irq
+	DC.L	TRAP0		; 32: trap 0
+	DC.L	EXCEPTION	; 33: trap 1
+	DC.L	EXCEPTION	; 34: trap 2
+	DC.L	EXCEPTION	; 35: trap 3
+	DC.L	EXCEPTION	; 36: trap 4
+	DC.L	EXCEPTION	; 37: trap 5
+	DC.L	EXCEPTION	; 38: trap 6
+	DC.L	EXCEPTION	; 39: trap 7
+	DC.L	EXCEPTION	; 40: trap 8
+	DC.L	EXCEPTION	; 41: trap 9
+	DC.L	EXCEPTION	; 42: trap 10
+	DC.L	EXCEPTION	; 43: trap 11
+	DC.L	EXCEPTION	; 44: trap 12
+	DC.L	EXCEPTION	; 45: trap 13
+	DC.L	EXCEPTION	; 46: trap 14
+	DC.L	EXCEPTION	; 47: trap 15
+; This is the end of the useful part of the table.
+VTBLE:
+
+	.align	1
+1:	BSR	OUTCH
+PUTS:	MOVE.B	(A0)+,D0
+	BNE	1b
+	RTS
+
+1:	.asciz	"received spurios interrupt\r\n"
+	.align	1
+IRUPT:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received chk exception\r\n"
+	.align	1
+CHKERR:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received privelege violation\r\n"
+	.align	1
+PRIV:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received TRAP\r\n"
+	.align	1
+TRAP0:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received NMI\r\n"
+	.align	1
+NMI:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received BUSERR\r\n"
+	.align	1
+BUSERR:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received illegal instruction\r\n"
+	.align	1
+ILL:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"received address error\r\n"
+	.align	1
+ADRERR:	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+1:	.asciz	"unhandled exception\r\n"
+	.align	1
+EXCEPTION:
+	LEA	1b,A0
+	BSR	PUTS
+	JMP	START
+
+	.align	1
+INCH:	MOVE.B	ACIACS,D0
+	AND.B	#$01,D0
+	BEQ	INCH
+	MOVE.B	ACIADA,D0
+	AND.B	#0x7F,D0	   ;  Strip msb of input
+	BRA	OUTCH
+
+	.align	1
+INHEX:	BSR	INCH
+	CMP.B	#'0',D0
+	BLT	ERROR		; NOT HEX
+	CMP.B	#'9',D0
+	BLE	1f
+	CMP.B	#'A',D0
+	BLT	ERROR		; NOT HEX
+	CMP.B	#'F',D0
+	BGT	ERROR		; NOT HEX
+	SUB.B	#7,D0
+1:	RTS
+
+	.align	1
+LOAD:	MOVE.B	#$15,ACIACS	; TURN READER ON
+;	MOVE.B	#$11,D0
+;	BSR	OUTCH
+3:	BSR	INCH
+	CMP.B	#'S',D0
+	BNE	3b		; 1ST CHAR NOT (S)
+	BSR	INCH		; READ CHAR
+	CMP.B	#'7',D0
+	BEQ	2f
+	CMP.B	#'3',D0
+	BNE	3b		; 2ND CHAR NOT (1)
+	MOVE.B	#$00,CKSM.L	; ZERO CHECKSUM
+	BSR	BYTE		; READ LENGTH BYTE
+	MOVE.B	D0,D1
+	SUB.B	#4,D1		; SUB ADDRESS LENGTH
+	BSR	BADDR		; BUILD ADDRESS
+1:	BSR	BYTE
+	SUB.B	#1,D1
+	BEQ	2f
+	MOVE.B	D0,(A0)		; STORE PATH
+	CMP.B	(A0)+,D0
+	BNE	ERROR		; MEMORY DID NOT CHANGE
+
+;	MOVE.B	#'<',D0
+;	BSR	OUTCH
+;	MOVE.B	CKSM.L,D0
+;	BSR	PHEX
+;	MOVE.B	#'>',D0
+;	BSR	OUTCH
+
+	BRA	1b		; ZERO BYTE COUNT
+2:	ADD.B	#1,CKSM.L
+
+;	MOVE.B	#'<',D0
+;	BSR	OUTCH
+;	MOVE.B	CKSM.L,D0
+;	BSR	PHEX
+;	MOVE.B	#'>',D0
+;	BSR	OUTCH
+
+	CMP.B	#00,CKSM.L
+	BEQ	3b
+ERROR:	MOVE.B	#'?',D0		; PRINT QUESTION MARK
+	BSR	OUTCH
+;	MOVE.B	CKSM.L,D0
+;	BSR	PHEX
+2:	MOVE.B	#$15,ACIACS	; TURN READER OFF
+;	MOVE.B	#$13,D0
+;	BSR	OUTCH
+	BRA	CONTRL
+
+; BUILD ADDRESS
+	.align	1
+BADDR:	BSR	BYTE
+	ASL.W	#8,D0
+	BSR	BYTE
+	SWAP	D0
+	BSR	BYTE
+	ASL.W	#8,D0
+	BSR	BYTE
+	MOVE.L	D0,A0
+	RTS
+
+PHEX:	MOVE.L	D0,-(SP)
+	BSR	OUTHL
+	MOVE.L	(SP)+,D0
+	BSR	OUTHR
+	RTS
+
+PHEX2:
+	MOVE.L	D0,-(SP)
+	ASR.W	#8,D0
+	BSR	PHEX
+	MOVE.L	(SP)+,D0
+	BSR	PHEX
+	RTS
+
+PHEX4:	MOVE.L	D0,-(SP)
+	SWAP	D0
+	BSR	PHEX2
+	MOVE.L	(SP)+,D0
+	BSR	PHEX2
+	RTS
+
+; INPUT BYTE (TWO NIBBLES)
+	.align	1
+BYTE:	BSR	INHEX
+	ASL.B	#4,D0
+	MOVE.B	D0,D2
+	BSR	INHEX
+	AND.B	#$0F,D0
+	ADD.B	D2,D0
+
+;	MOVE.L	D0,D2
+;	MOVE.B	#'<',D0
+;	BSR	OUTCH
+;	MOVE.L	D2,D0
+;	BSR	OUTHL
+;	MOVE.L	D2,D0
+;	BSR	OUTHR
+;	MOVE.B	#'>',D0
+;	BSR	OUTCH
+;	MOVE.L	D2,D0
+
+	ADD.B	D0,CKSM.L
+	RTS
+
+MEMTEST:
+	LEA	msgRamCheck,A0
+	BSR	PUTS
+	LEA	RAM_START.L,A2
+1:
+	move.l	A2,D0
+	BSR	PHEX4
+	BSR	OUTCR
+	move.b  #$AA,(A2)   ; First test with 10101010
+	cmp.b   #$AA,(A2)
+	bne	2f
+	move.b  #$55,(A2)   ; Then with 01010101
+	cmp.b   #$55,(A2)
+	bne	2f
+	move.b  #$00,(A2)   ; And finally clear the memory
+	cmp.b   #$00,(A2)+  ; And move to the next byte
+	bne	2f
+	cmp.l   #RAM_END,A2  
+	blt	1b		; While we're still below the end of ram to check
+	bra	3f
+2:	LEA	msgRamFail,A0
+	bsr	PUTS
+	move.l	A2,D0
+	bsr	PHEX4		; Print out the address that failed
+	bsr	OUTCR
+	RTS
+3:	LEA	msgRamPass, A0
+	BSR	PUTS
+	JMP	CONTRL
+
+msgRamCheck:
+		dc.b "Checking RAM...\r\n",0
+msgRamFail:
+		dc.b "Failed at: ",0
+msgRamPass:
+		dc.b "Passed.\r\n",0
+
+	.align	1
+DUMP:	BSR	BADDR
+	BSR	OUTS
+	BSR	BYTE
+	MOVE.B	D0,D1
+	BSR	OUTCR
+1:	BSR	OUT2HS
+	SUB.B	#1,D1
+	BNE	1b
+	JMP	CONTRL
+
+	.align	1
+JUMP:	BSR	BADDR		; BUILD ADDRESS
+	JSR	(A0)
+	JMP	CONTRL
+
+; CHANGE MEMORY (M AAAAAAAA DD NN)
+	.align	1
+CHANGE: BSR	BADDR		; BUILD ADDRESS
+	BSR	OUTS		; PRINT SPACE
+	BSR	OUT2HS
+	ADD.L	#-1,A0
+	BSR	BYTE
+	MOVE.B	D0,(A0)
+	CMP.B	(A0),D0
+	BNE	ERROR		; MEMORY DID NOT CHANGE
+	BRA	CONTRL
+
+	.align	1
+OUTHL:	LSR.B	#4,D0		; OUT HEX LEFT BCD DIGIT
+OUTHR:	AND.B	#$0F,D0		; OUT HEX RIGHT BCD DIGIT
+	ADD.B	#'0',D0
+	CMP.B	#'9',D0
+	BLS	OUTCH
+	ADD.B	#$7,D0
+OUTCH:	MOVEM.L	D0,-(SP)	; OUTPUT ONE CHAR
+1:	MOVE.B	ACIACS,D0	; Print one character
+	AND.B	#$02,D0
+	BEQ	1b
+	MOVEM.L	(SP)+,D0
+	MOVE.B	D0,ACIADA
+	RTS
+
+	.align	1
+OUT2H:  MOVE.B	(A0),D0		; OUTPUT 2 HEX CHAR
+	BSR	OUTHL		; OUT LEFT HEX CHAR
+	MOVE.B	(A0)+,D0
+	BRA	OUTHR		; OUT RIGHT HEX CHAR
+
+	.align	1
+OUT2HS: BSR	OUT2H		; OUTPUT 2 HEX CHAR + SPACE
+OUTS:	MOVE.B	#' ',D0		; SPACE
+	BRA	OUTCH		; (BSR & RTS)
+
+	.align	1
+OUTCR:	MOVE.B	#'\r',D0
+	BSR	OUTCH
+	MOVE.B	#'\n',D0
+	BRA	OUTCH
+
+; PRINT CONTENTS OF STACK
+	.align	1
+PRINT:	MOVE.L	SP,A0		; SAVE STACK POINTER
+	MOVE.L	#32,D1
+1:	BSR	OUT2HS		; OUT 2 HEX & SPACE
+	SUB.L	#1,D1
+	BNE	1b
+	BRA	CONTRL
+
+; ENTER POWER ON SEQUENCE
+	.align	1
+START:	MOVE.B	#$03,ACIACS
+	NOP
+	NOP
+	NOP
+	MOVE.B	#$15,ACIACS
+	NOP
+	NOP
+	NOP
+	LEA	MSG,A0
+	BRA	2f
+MSG:	.asciz	"MiniBug68k.\r\n"
+	.align	1
+1:	MOVE.B	ACIACS,D1
+	AND.B	#$02,D1
+	BEQ	1b
+	MOVE.B	D0,ACIADA
+2:	MOVE.B	(A0)+,D0
+	BNE	1b
+
+1:	MOVE.B	#$00,$00000000
+	CMP.B	#$00,$00000000
+	BNE	1b
+1:	MOVE.B	#$FF,$00000000
+	CMP.B	#$FF,$00000000
+	BNE	1b
+
+	SUB.L   A0,A0		; COPY VECTOR TABLE TO RAM
+	LEA	VTBL,A1
+	MOVE.W	#(VTBLE - VTBLE),D1
+1:	MOVE.B	(A1)+,D0
+	MOVE.B	D0,(A0)+
+	SUB.W	#1,D1
+	BNE	1b
+
+CONTRL:	BSR	OUTCR
+	MOVE.B	#'>',D0
+	BSR	OUTCH
+	JSR	INCH		; READ CHARACTER
+	MOVE.B	D0,D1
+	BSR	OUTS		; PRINT SPACE
+	MOVE.B	D1,D0
+	CMP.B	#'D',D0
+	BEQ	DUMP
+	CMP.B	#'T',D0
+	BEQ	MEMTEST
+	CMP.B	#'L',D0
+	BEQ	LOAD
+	CMP.B	#'M',D0
+	BEQ	CHANGE
+	CMP.B	#'P',D0
+	BEQ	PRINT		; STACK
+	CMP.B	#'J',D0
+	BEQ	JUMP
+	CMP.B	#'G',D0
+	BNE	CONTRL
+	MOVEM.L	D0-D7/A0-A7,-(SP)
+	RTE			; GO
+
+	END
