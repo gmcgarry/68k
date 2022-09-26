@@ -1,6 +1,8 @@
 ;
 ; Calculate CPU clock using MSM4262B clock
 ;
+; Cycles times are for 8-bit mode (MC68008).
+;
 
 REGS	EQU	$FFFFD000
 
@@ -29,32 +31,34 @@ main:
         MOVE.B  #$04,CF(A1)	; TEST=0, 24HOUR=1, STOP=0, REST=0
 
 	CLR.L	D1
+	MOVE.L	#4,D2
+	LEA	CD(A1),A2
 1:				; wait for wave to go high
-	MOVE.B	CD(A1),D0
-	AND.B	#$04,D0
+	MOVE.B	(A2),D0
+	AND.B	D2,D0
 	BEQ	1b
 1:				; wait for wave to go low
-	MOVE.B	CD(A1),D0
-	AND.B	#$04,D0
+	MOVE.B	(A2),D0
+	AND.B	D2,D0
 	BNE	1b
 1:
-	ADD.W	#1,D1		; 8T
-	MOVE.B	CD(A1),D0	; 8T
-	AND.B	#$04,D0		; 8T
-	BEQ	1b		; 10T (taken)
+	ADD.W	#1,D1		; 8T 
+	MOVE.B	(A2),D0		; 12T
+	AND.B	D2,D0		; 8T
+	BEQ	1b		; 8T + 10T (taken) 20T
 1:
-	ADD.W	#1,D1		; 8T	12T
-	MOVE.B	CD(A1),D0	; 8T	24T
-	AND.B	#$04,D0		; 8T	20T
-	BNE	1b		; 10T (taken)	14T
+	ADD.W	#1,D1		; 8T
+	MOVE.B	(A2),D0		; 12T
+	AND.B	D2,D0		; 8T
+	BNE	1b		; 18T (taken)	20T
 
 	; at this point, D1 is the number of times round the loop
 
 	; timer is 1/64 of a second
-	; 120 T cycles around the loop
+	; 46 T cycles around the loop
 
-	; MHz = D1 * 64 * 116
-	MULU.W	#(64 * 62),D1
+	; MHz = D1 * 64 * 46
+	MULU.W	#(64 * 46),D1
 
 	LEA	msgs,A0
 	JSR	PUTS
@@ -77,7 +81,7 @@ main:
 
 PUTDEC32:
 	MOVE.L	D0,-(SP)
-	DIVU	#10000,D0
+	DIVU	#1000,D0
 	BEQ	1f
 	MOVE.L	D0,-(SP)
 	EXT.L	D0
