@@ -173,24 +173,8 @@ LOAD:	MOVE.B	#$15,ACIACS	; TURN READER ON
 	MOVE.B	D0,(A0)		; STORE PATH
 	CMP.B	(A0)+,D0
 	BNE	ERROR		; MEMORY DID NOT CHANGE
-
-;	MOVE.B	#'<',D0
-;	BSR	OUTCH
-;	MOVE.B	CKSM.L,D0
-;	BSR	PHEX
-;	MOVE.B	#'>',D0
-;	BSR	OUTCH
-
 	BRA	1b		; ZERO BYTE COUNT
 2:	ADD.B	#1,CKSM.L
-
-;	MOVE.B	#'<',D0
-;	BSR	OUTCH
-;	MOVE.B	CKSM.L,D0
-;	BSR	PHEX
-;	MOVE.B	#'>',D0
-;	BSR	OUTCH
-
 	CMP.B	#00,CKSM.L
 	BEQ	3b
 ERROR:	MOVE.B	#'?',D0		; PRINT QUESTION MARK
@@ -243,18 +227,6 @@ BYTE:	BSR	INHEX
 	BSR	INHEX
 	AND.B	#$0F,D0
 	ADD.B	D2,D0
-
-;	MOVE.L	D0,D2
-;	MOVE.B	#'<',D0
-;	BSR	OUTCH
-;	MOVE.L	D2,D0
-;	BSR	OUTHL
-;	MOVE.L	D2,D0
-;	BSR	OUTHR
-;	MOVE.B	#'>',D0
-;	BSR	OUTCH
-;	MOVE.L	D2,D0
-
 	ADD.B	D0,CKSM.L
 	RTS
 
@@ -288,12 +260,9 @@ MEMTEST:
 	BSR	PUTS
 	JMP	CONTRL
 
-msgRamCheck:
-		dc.b "Checking RAM...\r\n",0
-msgRamFail:
-		dc.b "Failed at: ",0
-msgRamPass:
-		dc.b "Passed.\r\n",0
+msgRamCheck:	DC.B "Checking RAM...\r\n",0
+msgRamFail:	DC.B "Failed at: ",0
+msgRamPass:	DC.B "Passed.\r\n",0
 
 	.align	1
 DUMP:	BSR	BADDR
@@ -376,7 +345,7 @@ START:	MOVE.B	#$03,ACIACS
 	NOP
 	LEA	MSG,A0
 	BRA	2f
-MSG:	.asciz	"MiniBug68k.\r\n"
+MSG:	DC.B	"MiniBug68k.\r\n",0
 	.align	1
 1:	MOVE.B	ACIACS,D1
 	AND.B	#$02,D1
@@ -400,7 +369,8 @@ MSG:	.asciz	"MiniBug68k.\r\n"
 	SUB.W	#1,D1
 	BNE	1b
 
-CONTRL:	BSR	OUTCR
+CONTRL:	MOVE.L	#STACK,SP
+	BSR	OUTCR
 	MOVE.B	#'>',D0
 	BSR	OUTCH
 	JSR	INCH		; READ CHARACTER
@@ -419,9 +389,6 @@ CONTRL:	BSR	OUTCR
 	BEQ	PRINT		; STACK
 	CMP.B	#'J',D0
 	BEQ	JUMP
-	CMP.B	#'G',D0
-	BNE	CONTRL
-	MOVEM.L	D0-D7/A0-A7,-(SP)
-	RTE			; GO
+	BRA	CONTRL
 
 	END

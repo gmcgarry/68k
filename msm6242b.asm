@@ -1,4 +1,4 @@
-MONITR	EQU	$000804A8
+MONITR	EQU	$FFFF84A8
 
 S1	EQU	0
 S10	EQU	1
@@ -24,8 +24,8 @@ CF	EQU	15		; TEST, 24/12, STOP, REST
 ; ITRPT/STND=1 (interrupt mode), then STD.P remains low until IRQ is reset to 0
 ; ITRPT/STND=0 (standard-pulse mode), then STD.P remains low until IRQ is reset to 0 (or the t0/t1 timer expires)
 
-REGS	EQU	$000FD000
-ACIA	EQU	$000FD800
+REGS	EQU	$FFFFD000
+ACIA	EQU	$FFFFD800
 ACIACS	EQU	ACIA+0
 ACIADA	EQU	ACIA+1
 

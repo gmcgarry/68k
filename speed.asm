@@ -4,15 +4,13 @@
 ; Cycles times are for 8-bit mode (MC68008).
 ;
 
+.include "monitor.inc"
+
 REGS	EQU	$FFFFD000
 
 CD	EQU	13		; 30-sec adjust, IRQ, BUSY, HOLD
 CE	EQU	14		; t1, t0, ITRPT/STND, MASK
 CF	EQU	15		; TEST, 24/12, STOP, REST
-
-PUTS	EQU	$FFF800C4
-PUTC	EQU	$FFF803EC
-MONITR	EQU	$FFF80362
 
 	ORG $00000400
 main:

@@ -1,6 +1,8 @@
-PUTS	EQU	$000800C4
-PUTC	EQU	$000803EC
-MONITR	EQU	$00080362
+PUTS	EQU	$FFFF80C4
+PUTC	EQU	$FFFF83EC
+MONITR	EQU	$FFFF8362
+
+ACIA	EQU	$FFFFD800
 
 	ORG	$0000400
 main:
@@ -9,6 +11,6 @@ main:
 ;	rts
 	jmp	MONITR
 
-str:	.asciz	"This is the message\r\n"
+str	DC.B	"This is the message\r\n",0
 
 	END
