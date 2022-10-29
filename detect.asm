@@ -43,10 +43,10 @@ START:
 	clr.b	IIFLAG.L		; Reset illegal flag
 	move.l	#.CONT2,CONTADDR.L	; Set up continue address
 	.68020
-;	CALLM	#0,MODULE		; Do module call
+	CALLM	#0,CMODULE.L		; Do module call
 	.68000
 .CONT2:
-	tst.b	 IIFLAG.L		; Was it illegal?
+	tst.b	IIFLAG.L		; Was it illegal?
 	bne	.TRY030			; Go on for 030 and up if so...
 
 	move.b	#2,CPUTYPE.L		; Else it's an 020
@@ -68,7 +68,7 @@ START:
 	; point!
 
 	.68030
-;	PMOVE	MMUSR,M16BUF.L		; Try PMOVE
+	PMOVE	MMUSR,M16BUF.L		; Try PMOVE
 	.68000
 .CONT3:
 	tst.b	IIFLAG.L		; Was it illegal?
@@ -78,9 +78,9 @@ START:
 	bra	.DONE
 
 .TRY040:
-	clr.b	 IIFLAG.L		; Reset illegal flag
-	move.l	#.CONT4,CONTADDR.L	; Set up continue address
-	movea.l #M16BUF,A0
+	clr.b	IIFLAG.L		; Reset illegal flag
+	MOVE.L	#.CONT4,CONTADDR.L	; Set up continue address
+	LEA	M16BUF,A0
 ;	movep.w D0,(0,A0)		; Try MOVEP
 .CONT4:
 	tst.b	 IIFLAG.L		; Was it illegal?
@@ -109,7 +109,7 @@ START:
 MODENTRY:
 	dc.w	$7000			; Save SP (essentially no-op)
 	.68020
-;	RTM	SP			; Just return	
+	RTM	SP			; Just return	
 	.68000
 
 IIHANDLER:

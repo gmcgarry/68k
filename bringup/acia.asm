@@ -1,7 +1,7 @@
 ; RAMless
 
-ACIACS	EQU	$000FD800	; [0-F][0-F][0-F][8-F]3800 maps to D800
-ACIADA	EQU	$000FD801
+ACIACS	EQU	$0000D800	; [0-F][0-F][0-F][8-F]3800 maps to D800
+ACIADA	EQU	$0000D801
 
 ; ROM @ 0x00000000
 ;	.BASE	$00000000
@@ -21,8 +21,7 @@ START:	MOVE.B	#$03, ACIACS	; reset ACIA
 	NOP
 	NOP
 	NOP
-	MOVE.B	#$15, ACIACS	; initialise ACIA (/16) = 230400bps
-;	MOVE.B	#$14, ACIACS	; initialise ACIA (/64) = 57600bps
+	MOVE.B	#$15, ACIACS	; initialise ACIA (/16) = 115200bps
 	NOP
 	NOP
 	NOP

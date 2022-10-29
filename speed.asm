@@ -19,10 +19,10 @@ main:
 	LEA	intros,A0
 	JSR	PUTS
 
-	MOVE	SR,-(SP)
-	MOVE	#$2700,SR	; disable interrupts
+	MOVE.W	SR,-(SP)
+	MOVE.W	#$2700,SR	; disable interrupts
 
-	MOVE.L	#REGS,A1
+	LEA	REGS,A1
 	CLR.B	CD(A1)		; ADJ=0, IRQ=xxx, BUSY=xxx, HOLD=0
 	CLR.B	CE(A1)		; TIMER=1/64 (33% duty cycle), ITRPT/STD=0 (wave output), MASK=0
         MOVE.B  #$05,CF(A1)	; TEST=0, 24HOUR=1, STOP=0, REST=1

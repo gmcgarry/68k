@@ -7,8 +7,8 @@
 ; address space).
 
 
-ACIACS	EQU	$000FD800	; [0-F][0-F][0-F][8-F]5800 maps to D800
-ACIADA	EQU	$000FD801
+ACIACS	EQU	$FFFFD800	; [0-F][0-F][0-F][8-F]5800 maps to D800
+ACIADA	EQU	$FFFFD801
 
 	ORG	$00080000
 	DC.L	$00000000
@@ -19,7 +19,7 @@ START:
 	MOVE.B	#$03, ACIACS	; reset ACIA
 	NOP
 	NOP
-	MOVE.B	#$15, ACIACS	; initialise ACIA (/16) = 34800kpbs
+	MOVE.B	#$15, ACIACS	; initialise ACIA (/16) = 115200bps
 
 	LEA	MSG, A0
 	BRA	2f

@@ -5,7 +5,7 @@
 RAM_START	EQU	$00000000
 RAM_END		EQU	$00080000
 
-ACIA	EQU	$000FD800
+ACIA	EQU	$FFFFD800
 ACIACS	EQU	ACIA+0
 ACIADA	EQU	ACIA+1
 
@@ -13,8 +13,8 @@ STACK	EQU	RAM_END - 256
 
 CKSM	EQU	STACK		; CHECKSUM
 
-	.BASE	$00080000
-	.ORG	$00080000
+	.BASE	$FFFF8000
+	.ORG	$FFFF8000
 
 VTBL:
 	DC.L	STACK
@@ -245,7 +245,7 @@ MEMTEST:
 	cmp.b   #$55,(A2)
 	bne	2f
 	move.b  #$00,(A2)   ; And finally clear the memory
-	cmp.b   #$00,(A2)+  ; And move to the next byte
+	tst.b   (A2)+  ; And move to the next byte
 	bne	2f
 	cmp.l   #RAM_END,A2  
 	blt	1b		; While we're still below the end of ram to check
@@ -354,8 +354,8 @@ MSG:	DC.B	"MiniBug68k.\r\n",0
 2:	MOVE.B	(A0)+,D0
 	BNE	1b
 
-1:	MOVE.B	#$00,$00000000
-	CMP.B	#$00,$00000000
+1:	CLR.B	$00000000	; WAIT FOR BANK SWITCH TO HAPPEN
+	TST.B	$00000000
 	BNE	1b
 1:	MOVE.B	#$FF,$00000000
 	CMP.B	#$FF,$00000000
@@ -363,11 +363,10 @@ MSG:	DC.B	"MiniBug68k.\r\n",0
 
 	SUB.L   A0,A0		; COPY VECTOR TABLE TO RAM
 	LEA	VTBL,A1
-	MOVE.W	#(VTBLE - VTBLE),D1
+	MOVE.W	#(VTBLE - VTBL - 1),D1
 1:	MOVE.B	(A1)+,D0
 	MOVE.B	D0,(A0)+
-	SUB.W	#1,D1
-	BNE	1b
+2:	DBRA	D1,1b
 
 CONTRL:	MOVE.L	#STACK,SP
 	BSR	OUTCR

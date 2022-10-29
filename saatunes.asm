@@ -26,8 +26,6 @@ main:
 	MOVE.B	#$FF,D0
 	BSR	delay
 
-	JMP	MONITR
-
 	MOVE.B	#'/',D0
 	JSR	PUTC
 
